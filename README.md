@@ -1,13 +1,32 @@
 # AgenticFi Dashboard
 
-Public stats dashboard for the Kite agentic economy.
+Public stats dashboard aggregating the entire Kite agentic economy.
 
-## Phase 1: Foundation + Hero Stats
+## Features
 
-- Aggregation service polling all data sources
-- Hero stats with sparklines
-- Per-product sections
+- Real-time ecosystem stats (TVL, volume, agents)
+- Per-product sections (AgentFi, Conduit, ShopKite, Treasury, Score, KiteIndex)
+- Embeddable widget for partner sites
+- Public API for builders
 - 5-minute caching
+
+## API
+
+```bash
+# Get ecosystem stats
+curl https://agenticfi.xyz/api/stats
+```
+
+## Products Tracked
+
+| Product | Stats |
+|---|---|
+| AgentFi | TVL, pools |
+| Conduit-Kite | Volume, services |
+| ShopKite | Orders, GMV |
+| AgentTreasury | AUM, treasuries |
+| AgentScore | Agents, average score |
+| KiteIndex | Queries, uptime |
 
 ## Development
 
