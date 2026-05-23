@@ -1,64 +1,48 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { getEcosystemStats } from "@/lib/aggregation";
 import Link from "next/link";
 
 export const metadata = {
   title: "Products — AgenticFi",
 };
 
-const products = [
-  {
-    name: "AgentFi",
-    description: "DEX, liquid staking, yield aggregator",
-    href: "https://agentfi.xyz",
-    stats: { tvl: "$0", pools: 0 },
-  },
-  {
-    name: "Conduit-Kite",
-    description: "Pay-per-call API marketplace",
-    href: "https://conduit-kite.xyz",
-    stats: { volume: "$0", services: 0 },
-  },
-  {
-    name: "ShopKite",
-    description: "Commerce for AI agents",
-    href: "https://shopkite.xyz",
-    stats: { orders: 0, gmv: "$0" },
-  },
-  {
-    name: "AgentTreasury",
-    description: "Multi-chain treasury management",
-    href: "https://agenttreasury.xyz",
-    stats: { aum: "$0", treasuries: 0 },
-  },
-  {
-    name: "AgentScore",
-    description: "Reputation system for agents",
-    href: "https://agentscore.xyz",
-    stats: { agents: 0, avgScore: 0 },
-  },
-  {
-    name: "KiteIndex",
-    description: "Production-grade indexer",
-    href: "https://kiteindex.xyz",
-    stats: { queries: 0, uptime: "99.9%" },
-  },
-];
+export default async function ProductsPage() {
+  const stats = await getEcosystemStats();
 
-export default function ProductsPage() {
   return (
-    <div className="container max-w-screen-2xl py-6 space-y-6">
-      <h1 className="text-3xl font-bold">Ecosystem Products</h1>
+    <div className="mx-auto w-full max-w-screen-2xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">Ecosystem Products</h1>
+        <p className="text-muted-foreground">
+          Product links are live. Metrics require each product to expose a stats endpoint and the
+          matching connector env var to be set.
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {products.map((product) => (
+        {stats.products.map((product) => (
           <Link key={product.name} href={product.href} target="_blank">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
               <CardHeader>
-                <CardTitle>{product.name}</CardTitle>
+                <div className="flex items-start justify-between gap-3">
+                  <CardTitle>{product.name}</CardTitle>
+                  <Badge variant={product.status === "connected" ? "default" : "outline"}>
+                    {product.status === "connected" ? "Live stats" : product.connector_env}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-3">
                   {product.description}
                 </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {product.metrics.map((metric) => (
+                    <div key={metric.label}>
+                      <div className="text-xs text-muted-foreground">{metric.label}</div>
+                      <div className="font-semibold">{metric.value}</div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </Link>
