@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getEcosystemStats } from "@/lib/aggregation";
 import Link from "next/link";
+import { Boxes } from "lucide-react";
 
 export const metadata = {
   title: "Products — AgenticFi",
@@ -11,18 +12,22 @@ export default async function ProductsPage() {
   const stats = await getEcosystemStats();
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Ecosystem Products</h1>
-        <p className="text-muted-foreground">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
+      <section className="rounded-lg border border-border bg-card/60 p-6 shadow-sm">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase text-primary">
+          <Boxes className="size-4" />
+          Kite products
+        </div>
+        <h1 className="mt-2 text-4xl font-bold">Ecosystem Products</h1>
+        <p className="mt-2 max-w-3xl text-muted-foreground">
           Product links are live. Metrics require each product to expose a stats endpoint and the
           matching connector env var to be set.
         </p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      </section>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {stats.products.map((product) => (
           <Link key={product.name} href={product.href} target="_blank">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+            <Card className="h-full cursor-pointer transition-colors hover:border-primary">
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
                   <CardTitle>{product.name}</CardTitle>

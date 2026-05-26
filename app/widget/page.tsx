@@ -1,14 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getEcosystemStats } from "@/lib/aggregation";
+import { BarChart3 } from "lucide-react";
 
 export default async function WidgetPage() {
   const stats = await getEcosystemStats();
 
   return (
     <div className="p-4 font-sans">
-      <Card className="max-w-sm">
+      <Card className="max-w-sm bg-card/90">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Kite Ecosystem</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <BarChart3 className="size-4 text-primary" />
+            Kite Ecosystem
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-2 text-xs">
