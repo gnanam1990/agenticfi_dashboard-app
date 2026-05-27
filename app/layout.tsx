@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
 import "./globals.css";
 
@@ -16,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AgenticFi Dashboard",
   description: "Kite agentic economy dashboard and stats connector status.",
+  icons: {
+    icon: "/brand/kite-logo-mark-beige.png",
+  },
 };
 
 export default function RootLayout({
@@ -32,9 +36,14 @@ export default function RootLayout({
         <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
           <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-90">
-              <span className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary text-lg font-bold leading-none text-primary-foreground">
-                K
-              </span>
+              <Image
+                src="/brand/kite-logo-beige.png"
+                alt="Kite"
+                width={72}
+                height={32}
+                className="h-8 w-auto object-contain"
+                priority
+              />
               <span className="text-xl font-bold text-foreground">AgenticFi</span>
               <span className="hidden h-4 w-px bg-border sm:inline-block" />
               <span className="hidden text-xs font-bold uppercase text-primary sm:inline-block">
