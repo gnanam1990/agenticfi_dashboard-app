@@ -173,7 +173,7 @@ async function loadProductStats(config: ProductConfig): Promise<ProductStats> {
       metrics: config.metrics.map((metric) => ({
         label: metric.label,
         value: formatValue(data[metric.key]),
-        detail: url,
+        detail: config.connector_env,
       })),
     };
   } catch (error) {
