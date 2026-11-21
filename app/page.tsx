@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getEcosystemStats } from "@/lib/aggregation";
+import { DATA_STATUS_LABEL, PRODUCT_STATUS_LABEL, getEcosystemStats } from "@/lib/aggregation";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Boxes, Network } from "lucide-react";
 
@@ -16,7 +16,7 @@ export default async function HomePage() {
       <section className="grid gap-8 rounded-lg border border-border bg-card/60 p-6 shadow-sm sm:p-8 lg:grid-cols-[1.15fr,0.85fr] lg:items-center">
         <div className="space-y-5">
           <Badge variant={stats.data_status === "connected" ? "default" : "outline"}>
-            {stats.data_status === "connectors_required" ? "Data connectors required" : stats.data_status}
+            {DATA_STATUS_LABEL[stats.data_status]}
           </Badge>
           <div className="max-w-3xl space-y-4">
             <h1 className="text-5xl font-bold text-foreground sm:text-6xl">AgenticFi</h1>
@@ -61,7 +61,7 @@ export default async function HomePage() {
               <div className="text-2xl font-bold">{stats.ecosystem_services}</div>
             </div>
             <div className="col-span-2 rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
-              Product totals stay withheld until real API connector env vars are configured.
+              Product totals are shown only when a product&apos;s /api/stats returns real data.
             </div>
           </CardContent>
         </Card>
@@ -88,7 +88,7 @@ export default async function HomePage() {
               <div className="flex items-start justify-between gap-3">
                 <CardTitle>{product.name}</CardTitle>
                 <Badge variant={product.status === "connected" ? "default" : "outline"}>
-                  {product.status === "connected" ? "Live" : "Connector needed"}
+                  {PRODUCT_STATUS_LABEL[product.status]}
                 </Badge>
               </div>
             </CardHeader>

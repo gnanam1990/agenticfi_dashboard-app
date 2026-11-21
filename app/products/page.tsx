@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getEcosystemStats } from "@/lib/aggregation";
+import { PRODUCT_STATUS_LABEL, getEcosystemStats } from "@/lib/aggregation";
 import Link from "next/link";
 import { Boxes } from "lucide-react";
 
@@ -20,8 +20,8 @@ export default async function ProductsPage() {
         </div>
         <h1 className="mt-2 text-4xl font-bold">Ecosystem Products</h1>
         <p className="mt-2 max-w-3xl text-muted-foreground">
-          Product links are live. Metrics require each product to expose a stats endpoint and the
-          matching connector env var to be set.
+          Product links are live. Metrics come from each product&apos;s /api/stats and appear only
+          when that product reports real data.
         </p>
       </section>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -32,7 +32,7 @@ export default async function ProductsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <CardTitle>{product.name}</CardTitle>
                   <Badge variant={product.status === "connected" ? "default" : "outline"}>
-                    {product.status === "connected" ? "Live stats" : product.connector_env}
+                    {PRODUCT_STATUS_LABEL[product.status]}
                   </Badge>
                 </div>
               </CardHeader>
