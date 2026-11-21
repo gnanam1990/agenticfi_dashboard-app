@@ -20,10 +20,31 @@ export interface ProductStats {
   description: string;
   href: string;
   connector_env: string;
-  status: "connected" | "not_configured" | "error";
+  status: ProductStatus;
   metrics: SummaryMetric[];
   error?: string;
 }
+
+/**
+ * connected      – the product's stats API returned at least one real value
+ * no_data        – the stats API answered, but the product has no live data yet
+ * not_configured – no stats URL is known for the product
+ * error          – the stats API could not be reached or answered unexpectedly
+ */
+export type ProductStatus = "connected" | "no_data" | "not_configured" | "error";
+
+export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
+  connected: "Live",
+  no_data: "No live data yet",
+  not_configured: "Connector needed",
+  error: "API error",
+};
+
+export const DATA_STATUS_LABEL: Record<EcosystemStats["data_status"], string> = {
+  connected: "All products live",
+  partial: "Partially live",
+  connectors_required: "No live product data yet",
+};
 
 interface ProductConfig {
   id: string;
@@ -31,6 +52,8 @@ interface ProductConfig {
   description: string;
   href: string;
   connector_env: string;
+  /** Used when the connector env var is unset. */
+  default_url?: string;
   metrics: Array<{ label: string; key: string }>;
 }
 
@@ -41,6 +64,7 @@ const PRODUCTS: ProductConfig[] = [
     description: "DEX, liquid staking, and yield surfaces",
     href: "https://agentfi-app.vercel.app",
     connector_env: "AGENTFI_STATS_URL",
+    default_url: "https://agentfi-app.vercel.app/api/stats",
     metrics: [
       { label: "TVL", key: "tvl" },
       { label: "Pools", key: "pools" },
@@ -52,6 +76,7 @@ const PRODUCTS: ProductConfig[] = [
     description: "Pay-per-call API marketplace",
     href: "https://conduit-kite.vercel.app",
     connector_env: "CONDUIT_STATS_URL",
+    default_url: "https://conduit-kite.vercel.app/api/stats",
     metrics: [
       { label: "Volume", key: "volume" },
       { label: "Services", key: "services" },
@@ -61,8 +86,9 @@ const PRODUCTS: ProductConfig[] = [
     id: "shopkite",
     name: "ShopKite",
     description: "Commerce for agents and digital goods",
-    href: "https://kiteshop.vercel.app",
+    href: "https://shopkite-app.vercel.app",
     connector_env: "SHOPKITE_STATS_URL",
+    default_url: "https://shopkite-app.vercel.app/api/stats",
     metrics: [
       { label: "Orders", key: "orders" },
       { label: "GMV", key: "gmv" },
@@ -74,6 +100,7 @@ const PRODUCTS: ProductConfig[] = [
     description: "Multi-chain treasury management",
     href: "https://agenttreasury-app.vercel.app",
     connector_env: "AGENTTREASURY_STATS_URL",
+    default_url: "https://agenttreasury-app.vercel.app/api/stats",
     metrics: [
       { label: "AUM", key: "aum" },
       { label: "Treasuries", key: "treasuries" },
@@ -85,6 +112,7 @@ const PRODUCTS: ProductConfig[] = [
     description: "Reputation system for agents",
     href: "https://agentscore-app.vercel.app",
     connector_env: "AGENTSCORE_STATS_URL",
+    default_url: "https://agentscore-app.vercel.app/api/stats",
     metrics: [
       { label: "Agents", key: "agents" },
       { label: "Average score", key: "average_score" },
@@ -106,9 +134,8 @@ const PRODUCTS: ProductConfig[] = [
 export async function getEcosystemStats(): Promise<EcosystemStats> {
   const products = await Promise.all(PRODUCTS.map(loadProductStats));
   const connected = products.filter((product) => product.status === "connected");
-  const missing = products
-    .filter((product) => product.status !== "connected")
-    .map((product) => product.connector_env);
+  const notLive = products.filter((product) => product.status !== "connected");
+  const missing = notLive.map((product) => product.connector_env);
 
   return {
     data_status:
@@ -122,8 +149,8 @@ export async function getEcosystemStats(): Promise<EcosystemStats> {
     summary: [
       {
         label: "Data status",
-        value: connected.length > 0 ? `${connected.length}/${PRODUCTS.length} connected` : "Connectors required",
-        detail: "Live stats are shown only after product API URLs are configured.",
+        value: `${connected.length}/${PRODUCTS.length} live`,
+        detail: "Numbers are shown only when a product's /api/stats returns real data.",
       },
       {
         label: "Tracked services",
@@ -136,9 +163,11 @@ export async function getEcosystemStats(): Promise<EcosystemStats> {
         detail: "API responses are cached with stale-while-revalidate headers.",
       },
       {
-        label: "Missing envs",
-        value: String(missing.length),
-        detail: missing.length ? missing.join(", ") : "All product connectors are configured.",
+        label: "Not live yet",
+        value: String(notLive.length),
+        detail: notLive.length
+          ? notLive.map((p) => `${p.name} (${PRODUCT_STATUS_LABEL[p.status].toLowerCase()})`).join(", ")
+          : "Every product reports live data.",
       },
     ],
     products,
@@ -148,7 +177,7 @@ export async function getEcosystemStats(): Promise<EcosystemStats> {
 }
 
 async function loadProductStats(config: ProductConfig): Promise<ProductStats> {
-  const url = process.env[config.connector_env];
+  const url = process.env[config.connector_env] || config.default_url;
   if (!url) {
     return {
       ...config,
@@ -163,10 +192,22 @@ async function loadProductStats(config: ProductConfig): Promise<ProductStats> {
 
   try {
     const response = await fetch(url, { next: { revalidate: 300 } });
+    // Product stats APIs answer 503 { error: "no live data source", reason } while
+    // the product has nothing real to report. That is honest, not an outage.
+    if (response.status === 503) {
+      const body = (await response.json().catch(() => null)) as { reason?: string } | null;
+      return noData(config, body?.reason ?? "The product reports no live data source yet.");
+    }
+    if (response.status === 404) {
+      throw new Error("Stats endpoint not deployed yet");
+    }
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data = (await response.json()) as Record<string, unknown>;
+    if (config.metrics.every((metric) => data[metric.key] === null || data[metric.key] === undefined)) {
+      return noData(config, "The stats API returned no values.");
+    }
     return {
       ...config,
       status: "connected",
@@ -184,10 +225,23 @@ async function loadProductStats(config: ProductConfig): Promise<ProductStats> {
       metrics: config.metrics.map((metric) => ({
         label: metric.label,
         value: "API error",
-        detail: config.connector_env,
+        detail: (error as Error).message,
       })),
     };
   }
+}
+
+function noData(config: ProductConfig, reason: string): ProductStats {
+  return {
+    ...config,
+    status: "no_data",
+    error: reason,
+    metrics: config.metrics.map((metric) => ({
+      label: metric.label,
+      value: "No live data",
+      detail: reason,
+    })),
+  };
 }
 
 function formatValue(value: unknown) {
